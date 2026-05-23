@@ -45,6 +45,18 @@ const schema = {
     required: false,
     message: 'Optional but highly recommended webhook signature validation key.',
   },
+  START_NGROK: {
+    key: 'START_NGROK',
+    type: 'boolean',
+    default: false,
+    message: 'Set to true to automatically start ngrok tunnel in development.',
+  },
+  NGROK_AUTHTOKEN: {
+    key: 'NGROK_AUTHTOKEN',
+    type: 'string',
+    required: false,
+    message: 'Your personal ngrok authtoken to establish the forward tunnel.',
+  },
 };
 
 const errors = [];
