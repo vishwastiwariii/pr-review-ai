@@ -94,25 +94,33 @@ class GithubService {
   }
 
   /**
-   * Submits a full pull request review (approves, requests changes, or comments).
+   * Submits a full pull request review with optional inline line comments.
    * 
    * @param {string} owner - Repository owner/organization
    * @param {string} repo - Repository name
    * @param {number} prNumber - Pull request number
    * @param {string} body - Review summary text
    * @param {'APPROVE'|'REQUEST_CHANGES'|'COMMENT'} [event='COMMENT'] - Action type
+   * @param {Array<Object>} [comments=[]] - Optional inline review comments
    * @returns {Promise<Object>} Response data
    */
-  async createPullRequestReview(owner, repo, prNumber, body, event = 'COMMENT') {
+  async createPullRequestReview(owner, repo, prNumber, body, event = 'COMMENT', comments = []) {
     try {
-      const response = await this.client.post(`/repos/${owner}/${repo}/pulls/${prNumber}/reviews`, {
-        body,
-        event,
-      });
-      console.log(`[SUCCESS] [GitHub API] Created PR review (${event}) for ${owner}/${repo} #${prNumber}`);
+      const payload = { body, event };
+
+      if (Array.isArray(comments) && comments.length > 0) {
+        payload.comments = comments.map(c => ({
+          path: c.path,
+          line: c.line,
+          body: c.body
+        }));
+      }
+
+      const response = await this.client.post(`/repos/${owner}/${repo}/pulls/${prNumber}/reviews`, payload);
+      console.log(`[SUCCESS] [GitHub API] Created PR review (${event}) with ${comments.length} inline comments for ${owner}/${repo} #${prNumber}`);
       return response.data;
     } catch (error) {
-      this._handleError(error, `Creating PR #${prNumber} review (${event})`);
+      this._handleError(error, `Creating PR #${prNumber} review (${event}) with ${comments.length} comments`);
     }
   }
 

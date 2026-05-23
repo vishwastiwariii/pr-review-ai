@@ -1,6 +1,7 @@
 const express = require('express');
 const { parsePullRequestPayload } = require('../utils/parseWebhook');
 const { validateWebhookSignature } = require('../middleware/validateWebhook');
+const reviewService = require('../services/reviewService');
 
 const router = express.Router();
 
@@ -36,8 +37,15 @@ router.post('/github', (req, res) => {
       if (monitoredActions.includes(pr.action)) {
         console.log(`[SUCCESS] [HTTP 202] [PR Event] Action "${pr.action}" triggers review. Initializing AI PR Review pipeline...`);
         
-        // TODO: Trigger asynchronous review worker service here
-        // e.g. reviewService.reviewPullRequest({ repo, pr, author });
+        // ASYNCHRONOUS PIPELINE HANDOFF (Non-blocking background worker)
+        const reviewMetadata = {
+          number: pr.number,
+          title: pr.title,
+          repository: repo.fullName
+        };
+        
+        reviewService.processPullRequest(reviewMetadata)
+          .catch(err => console.error(`[ERROR] [Pipeline] Background process failed: ${err.message}`));
 
         return res.status(202).json({
           message: `Webhook accepted. AI review pipeline triggered for PR #${pr.number} (${pr.action}).`,
