@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+@theme {
+  /* Font Family Mappings */
+  --font-display: "Sora", sans-serif;
+  --font-headline-md: "Sora", sans-serif;
+  --font-headline-lg: "Sora", sans-serif;
+  --font-label-caps: "JetBrains Mono", monospace;
+  --font-label-mono: "JetBrains Mono", monospace;
+  --font-body-md: "Hanken Grotesk", sans-serif;
+  --font-body-lg: "Hanken Grotesk", sans-serif;
+
+  /* Theme Color Variables */
+  --color-on-tertiary-fixed: #002115;
+  --color-on-background: #0b1c30;
+  --color-inverse-surface: #213145;
+  --color-outline-variant: #c6c6cd;
+  --color-on-secondary: #ffffff;
+  --color-surface-container: #e5eeff;
+  --color-tertiary: #000000;
+  --color-primary-container: #131b2e;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-variant: #d3e4fe;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-primary-container: #7c839b;
+  --color-primary-fixed: #dae2fd;
+  --color-surface-tint: #565e74;
+  --color-on-tertiary-fixed-variant: #294e3f;
+  --color-on-tertiary-container: #668c7a;
+  --color-secondary-container: #dfe0e0;
+  --color-on-secondary-container: #616363;
+  --color-primary: #000000;
+  --color-on-primary: #ffffff;
+  --color-surface-bright: #f8f9ff;
+  --color-on-tertiary: #ffffff;
+  --color-secondary-fixed: #e2e2e2;
+  --color-inverse-on-surface: #eaf1ff;
+  --color-on-primary-fixed: #131b2e;
+  --color-tertiary-fixed-dim: #a8cfbc;
+  --color-inverse-primary: #bec6e0;
+  --color-surface-container-high: #dce9ff;
+  --color-surface: #f8f9ff;
+  --color-outline: #76777d;
+  --color-on-primary-fixed-variant: #3f465c;
+  --color-on-surface: #0b1c30;
+  --color-on-surface-variant: #45464d;
+  --color-primary-fixed-dim: #bec6e0;
+  --color-on-error-container: #93000a;
+  --color-tertiary-fixed: #c3ecd7;
+  --color-surface-container-highest: #d3e4fe;
+  --color-tertiary-container: #002115;
+  --color-background: #f8f9ff;
+  --color-surface-dim: #cbdbf5;
+  --color-on-secondary-fixed: #1a1c1c;
+  --color-secondary: #5d5f5f;
+  --color-secondary-fixed-dim: #c6c6c7;
+  --color-error: #ba1a1a;
+  --color-on-secondary-fixed-variant: #454747;
+}
+
+/* Custom styles from Stitch HTML */
+body {
+  background-color: #FAFAFA;
+  color: #0b1c30;
+}
+.brutalist-border {
+  border: 1px solid #0F172A;
+}
+.brutalist-shadow-hover:hover {
+  box-shadow: 2px 2px 0px #0F172A;
+  transform: translate(-1px, -1px);
+  transition: all 0.15s ease-in-out;
+}
+.grid-bg {
+  background-image: linear-gradient(to right, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.code-block {
+  font-family: 'JetBrains Mono', monospace;
+}
+.tech-shadow {
+  box-shadow: 2px 2px 0px #0F172A;
+}
+
+/* Precise Editorial Brutalist Typography Utility Classes */
+@utility text-body-lg {
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 400;
+  font-family: "Hanken Grotesk", sans-serif;
+}
+@utility text-body-md {
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
+  font-family: "Hanken Grotesk", sans-serif;
+}
+@utility text-label-caps {
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+}
+@utility text-label-mono {
+  font-size: 13px;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  font-family: "JetBrains Mono", monospace;
+}
+@utility text-headline-md {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+  font-family: "Sora", sans-serif;
+}
+@utility text-headline-lg {
+  font-size: 48px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  font-family: "Sora", sans-serif;
+}
+@utility text-headline-lg-mobile {
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  font-family: "Sora", sans-serif;
+}
+@utility text-display {
+  font-size: 72px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+  font-family: "Sora", sans-serif;
+}
+
+
