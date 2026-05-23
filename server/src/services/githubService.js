@@ -29,7 +29,7 @@ class GithubService {
     this.client = axios.create({
       baseURL: 'https://api.github.com',
       headers,
-      timeout: 10000, // 10 seconds timeout
+      timeout: 30000, // 30 seconds timeout
     });
   }
 

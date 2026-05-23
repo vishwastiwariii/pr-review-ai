@@ -33,10 +33,16 @@ async function startNgrok() {
     const ngrok = require('@ngrok/ngrok');
 
     // Forward the Express port
-    const listener = await ngrok.forward({
+    const forwardOptions = {
       addr: PORT,
       authtoken: config.NGROK_AUTHTOKEN,
-    });
+    };
+
+    if (config.NGROK_DOMAIN) {
+      forwardOptions.domain = config.NGROK_DOMAIN;
+    }
+
+    const listener = await ngrok.forward(forwardOptions);
 
     const tunnelUrl = listener.url();
     console.log(`=============================================`);

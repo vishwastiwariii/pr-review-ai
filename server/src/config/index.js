@@ -57,6 +57,12 @@ const schema = {
     required: false,
     message: 'Your personal ngrok authtoken to establish the forward tunnel.',
   },
+  NGROK_DOMAIN: {
+    key: 'NGROK_DOMAIN',
+    type: 'string',
+    required: false,
+    message: 'Your permanent static ngrok domain to bind the forward tunnel.',
+  },
 };
 
 const errors = [];

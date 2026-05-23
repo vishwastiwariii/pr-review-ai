@@ -40,6 +40,8 @@ RESPONSE SCHEMA:
     {
       "path": "relative/file/path.js",
       "line": 42,
+      "category": "security", // Must be exactly one of: "bug" (logic errors), "security" (vulnerabilities), "performance" (speed/memory), "style" (maintainability/readability)
+      "severity": "critical", // Must be exactly one of: "critical", "major", "minor"
       "body": "Your detailed feedback and code recommendations. Explain the impact of the issue (e.g., security risk, performance hit), and provide a clear, actionable code snippet demonstrating the correct fix."
     }
   ]

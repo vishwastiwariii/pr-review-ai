@@ -2,6 +2,7 @@ const githubService = require('./githubService');
 const aiService = require('./aiService');
 const { filterPRFiles } = require('../utils/filterFiles');
 const { formatPRFilesForLLM } = require('../utils/formatDiff');
+const { formatGitHubComment } = require('../utils/formatComment');
 
 /**
  * Orchestrator Service responsible for the end-to-end pull request review workflow.
@@ -76,21 +77,87 @@ class ReviewService {
       const inlineComments = reviewPayload.comments || [];
       console.log(`[PIPELINE] [STEP 5/5] Submitting review summary and ${inlineComments.length} inline comment suggestions back to PR...`);
       
+      const formattedComments = inlineComments.map(c => ({
+        path: c.path,
+        line: c.line,
+        body: formatGitHubComment(c)
+      }));
+
       const headerPrefix = `### 🤖 AI Pull Request Review\n\n`;
       const finalSummary = `${headerPrefix}${reviewPayload.summary}`;
 
-      const githubResponse = await githubService.createPullRequestReview(
-        owner,
-        repo,
-        number,
-        finalSummary,
-        'COMMENT',
-        inlineComments
-      );
+      let githubResponse;
+      try {
+        // Attempt unified review submission in a single transaction (fastest and cleanest)
+        githubResponse = await githubService.createPullRequestReview(
+          owner,
+          repo,
+          number,
+          finalSummary,
+          'COMMENT',
+          formattedComments
+        );
+      } catch (reviewError) {
+        // Check if the error is a 422 Unprocessable Entity (commonly caused by hallucinated invalid inline comment line numbers)
+        if (reviewError.status === 422 && formattedComments.length > 0) {
+          console.warn(`[WARN] [Pipeline] Unified review submission failed with HTTP 422 (likely invalid comment line numbers).`);
+          console.log(`[INFO] [Pipeline] Falling back to separate submission: posting summary review first, then individual comments...`);
+          
+          // 1. Submit the high-level summary review alone (guaranteed to succeed if permissions are correct)
+          githubResponse = await githubService.createPullRequestReview(
+            owner,
+            repo,
+            number,
+            finalSummary,
+            'COMMENT',
+            []
+          );
+          
+          // 2. Fetch the HEAD commit SHA needed for individual comments
+          console.log(`[INFO] [Pipeline] Fetching PR details to get HEAD commit SHA for inline comments...`);
+          const prDetails = await githubService.getPullRequest(owner, repo, number);
+          const commitId = prDetails?.head?.sha;
+          
+          if (!commitId) {
+            console.error(`[ERROR] [Pipeline] Could not retrieve HEAD commit SHA. Skipping individual inline comments.`);
+            return githubResponse;
+          }
+          
+          // 3. Post each inline comment individually, catching 422/404 errors gracefully
+          let successCommentsCount = 0;
+          for (const comment of formattedComments) {
+            try {
+              await githubService.postReviewComment(
+                owner,
+                repo,
+                number,
+                commitId,
+                comment.path,
+                comment.line,
+                comment.body
+              );
+              successCommentsCount++;
+            } catch (commentError) {
+              // Gracefully skip 422/404 errors (out-of-bounds line numbers)
+              if (commentError.status === 422 || commentError.status === 404) {
+                console.warn(`[WARN] [Pipeline] Skipping invalid inline comment on ${comment.path}:${comment.line} (Error: ${commentError.message})`);
+              } else {
+                // Rethrow other errors (e.g. rate limit, auth) to not mask them
+                throw commentError;
+              }
+            }
+          }
+          
+          console.log(`[SUCCESS] [Pipeline] Graceful fallback completed. Successfully posted ${successCommentsCount} of ${formattedComments.length} inline comments.`);
+        } else {
+          // If it is not a 422 or there are no comments, rethrow the original error
+          throw reviewError;
+        }
+      }
 
       console.log(`\n======================================================================`);
       console.log(`[PIPELINE] [SUCCESS] Successfully completed code review for PR #${number}!`);
-      console.log(`[PIPELINE] Review submitted to GitHub in single batch transaction.`);
+      console.log(`[PIPELINE] Review process finished successfully.`);
       console.log(`======================================================================\n`);
       
       return githubResponse;

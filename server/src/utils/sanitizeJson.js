@@ -170,6 +170,8 @@ function sanitizeReviewPayload(rawJson) {
       const path = c.path;
       const rawLine = c.line;
       const body = c.body;
+      const rawCategory = c.category;
+      const rawSeverity = c.severity;
 
       // Validate core fields exist
       if (!path || typeof path !== 'string' || !body || typeof body !== 'string') {
@@ -182,10 +184,27 @@ function sanitizeReviewPayload(rawJson) {
         return; // Exclude comments with invalid line mappings
       }
 
+      // Validate and sanitize category and severity
+      const validCategories = ['bug', 'security', 'performance', 'style'];
+      const validSeverities = ['critical', 'major', 'minor'];
+
+      const category = (rawCategory && typeof rawCategory === 'string') 
+        ? rawCategory.trim().toLowerCase() 
+        : 'style';
+      
+      const severity = (rawSeverity && typeof rawSeverity === 'string') 
+        ? rawSeverity.trim().toLowerCase() 
+        : 'minor';
+
+      const finalCategory = validCategories.includes(category) ? category : 'style';
+      const finalSeverity = validSeverities.includes(severity) ? severity : 'minor';
+
       // Append clean, validated comment
       result.comments.push({
         path: path.trim(),
         line,
+        category: finalCategory,
+        severity: finalSeverity,
         body: body.trim()
       });
     });
