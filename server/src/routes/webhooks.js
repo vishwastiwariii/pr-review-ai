@@ -37,11 +37,15 @@ router.post('/github', (req, res) => {
       if (monitoredActions.includes(pr.action)) {
         console.log(`[SUCCESS] [HTTP 202] [PR Event] Action "${pr.action}" triggers review. Initializing AI PR Review pipeline...`);
         
+        // Extract installation ID from webhook payload if triggered by a GitHub App
+        const installationId = payload.installation?.id;
+
         // ASYNCHRONOUS PIPELINE HANDOFF (Non-blocking background worker)
         const reviewMetadata = {
           number: pr.number,
           title: pr.title,
-          repository: repo.fullName
+          repository: repo.fullName,
+          installationId: installationId
         };
         
         reviewService.processPullRequest(reviewMetadata)

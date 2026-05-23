@@ -30,8 +30,20 @@ const schema = {
   GITHUB_TOKEN: {
     key: 'GITHUB_TOKEN',
     type: 'string',
+    required: false,
+    message: 'Optional Personal Access Token fallback for single-user testing.',
+  },
+  GITHUB_APP_ID: {
+    key: 'GITHUB_APP_ID',
+    type: 'string',
     required: isProduction,
-    message: 'GitHub Personal Access Token is required in production mode to authenticate API actions.',
+    message: 'GitHub App ID is required in production mode to authenticate dynamically as the App.',
+  },
+  GITHUB_APP_PRIVATE_KEY: {
+    key: 'GITHUB_APP_PRIVATE_KEY',
+    type: 'string',
+    required: isProduction,
+    message: 'GitHub App Private Key is required in production mode to sign JWT tokens.',
   },
   OPENROUTER_API_KEY: {
     key: 'OPENROUTER_API_KEY',

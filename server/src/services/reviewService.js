@@ -26,18 +26,21 @@ class ReviewService {
    * @returns {Promise<void>}
    */
   async processPullRequest(prMetadata) {
-    const { number, repository, title } = prMetadata;
+    const { number, repository, title, installationId } = prMetadata;
     const [owner, repo] = repository.split('/');
 
     console.log(`\n======================================================================`);
     console.log(`[PIPELINE] [START] Initiating Autonomous Code Review for PR #${number}`);
     console.log(`[PIPELINE] Repo: ${repository} | Title: "${title}"`);
+    if (installationId) {
+      console.log(`[PIPELINE] GitHub App Installation ID: ${installationId}`);
+    }
     console.log(`======================================================================\n`);
 
     try {
       // --- Step 1: Fetch changed files from GitHub ---
       console.log(`[PIPELINE] [STEP 1/5] Fetching changed files patches from GitHub REST API...`);
-      const rawFiles = await githubService.getPullRequestFiles(owner, repo, number);
+      const rawFiles = await githubService.getPullRequestFiles(owner, repo, number, installationId);
       
       if (!rawFiles || rawFiles.length === 0) {
         console.warn(`[PIPELINE] [WARN] No files retrieved for PR #${number}. Aborting review.`);
@@ -56,7 +59,9 @@ class ReviewService {
           repo,
           number,
           `### 🤖 Automated AI Review\n\nAll modified files in this Pull Request are lockfiles, builds, or binary assets that do not require code auditing. Skipping automated review.`,
-          'COMMENT'
+          'COMMENT',
+          [],
+          installationId
         );
         return;
       }
@@ -95,7 +100,8 @@ class ReviewService {
           number,
           finalSummary,
           'COMMENT',
-          formattedComments
+          formattedComments,
+          installationId
         );
       } catch (reviewError) {
         // Check if the error is a 422 Unprocessable Entity (commonly caused by hallucinated invalid inline comment line numbers)
@@ -110,12 +116,13 @@ class ReviewService {
             number,
             finalSummary,
             'COMMENT',
-            []
+            [],
+            installationId
           );
           
           // 2. Fetch the HEAD commit SHA needed for individual comments
           console.log(`[INFO] [Pipeline] Fetching PR details to get HEAD commit SHA for inline comments...`);
-          const prDetails = await githubService.getPullRequest(owner, repo, number);
+          const prDetails = await githubService.getPullRequest(owner, repo, number, installationId);
           const commitId = prDetails?.head?.sha;
           
           if (!commitId) {
@@ -134,7 +141,8 @@ class ReviewService {
                 commitId,
                 comment.path,
                 comment.line,
-                comment.body
+                comment.body,
+                installationId
               );
               successCommentsCount++;
             } catch (commentError) {

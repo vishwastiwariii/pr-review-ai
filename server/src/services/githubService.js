@@ -4,8 +4,9 @@ const config = require('../config');
 /**
  * Reusable, authenticated service for interacting with the GitHub REST API.
  * 
- * Uses Axios client instance with central token authentication, custom media type
- * overrides, and structured error extraction (including rate-limit awareness).
+ * Supports:
+ *   1. Dynamic multi-tenant GitHub App Installation authentication using Octokit.
+ *   2. Classic Personal Access Token authentication using Axios (fallback for tests/CLI).
  */
 class GithubService {
   constructor() {
@@ -18,12 +19,6 @@ class GithubService {
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-    } else {
-      if (config.isProduction) {
-        console.error('[ERROR] [GitHub Service] GITHUB_TOKEN is missing in production! API requests will fail.');
-      } else {
-        console.warn('[WARN] [GitHub Service] GITHUB_TOKEN is not configured. Running unauthenticated (highly rate-limited).');
-      }
     }
 
     this.client = axios.create({
@@ -31,6 +26,39 @@ class GithubService {
       headers,
       timeout: 30000, // 30 seconds timeout
     });
+
+    // Initialize GitHub App support if credentials are provided
+    this.app = null;
+    if (config.GITHUB_APP_ID && config.GITHUB_APP_PRIVATE_KEY) {
+      try {
+        const { App } = require('octokit');
+        const formattedPrivateKey = config.GITHUB_APP_PRIVATE_KEY.replace(/\\n/g, '\n');
+        this.app = new App({
+          appId: config.GITHUB_APP_ID,
+          privateKey: formattedPrivateKey,
+        });
+        console.log(`[SUCCESS] [GitHub App] Programmatic App client initialized successfully. App ID: ${config.GITHUB_APP_ID}`);
+      } catch (err) {
+        console.error(`[ERROR] [GitHub App] Failed to initialize App client: ${err.message}`);
+      }
+    } else {
+      console.warn('[WARN] [GitHub App] GITHUB_APP_ID or GITHUB_APP_PRIVATE_KEY is missing. Running in token fallback mode.');
+    }
+  }
+
+  /**
+   * Helper to retrieve an authenticated client instance for the given installation,
+   * or fall back to the default Axios client if no installationId is provided.
+   */
+  async getClient(installationId) {
+    if (installationId && this.app) {
+      try {
+        return await this.app.getInstallationOctokit(installationId);
+      } catch (err) {
+        console.error(`[ERROR] [GitHub App] Failed to authenticate installation ${installationId}: ${err.message}`);
+      }
+    }
+    return null;
   }
 
   /**
@@ -39,10 +67,22 @@ class GithubService {
    * @param {string} owner - Repository owner/organization
    * @param {string} repo - Repository name
    * @param {number} prNumber - Pull request number
+   * @param {number} [installationId] - Optional GitHub App installation ID
    * @returns {Promise<Object>} PR metadata
    */
-  async getPullRequest(owner, repo, prNumber) {
+  async getPullRequest(owner, repo, prNumber, installationId) {
     try {
+      const octokit = await this.getClient(installationId);
+      if (octokit) {
+        const response = await octokit.rest.pulls.get({
+          owner,
+          repo,
+          pull_number: prNumber,
+        });
+        console.log(`[SUCCESS] [GitHub App] Fetched PR details for ${owner}/${repo} #${prNumber}`);
+        return response.data;
+      }
+
       const response = await this.client.get(`/repos/${owner}/${repo}/pulls/${prNumber}`);
       console.log(`[SUCCESS] [GitHub API] Fetched PR details for ${owner}/${repo} #${prNumber}`);
       return response.data;
@@ -58,10 +98,25 @@ class GithubService {
    * @param {string} owner - Repository owner/organization
    * @param {string} repo - Repository name
    * @param {number} prNumber - Pull request number
+   * @param {number} [installationId] - Optional GitHub App installation ID
    * @returns {Promise<string>} Raw diff file content
    */
-  async getPullRequestDiff(owner, repo, prNumber) {
+  async getPullRequestDiff(owner, repo, prNumber, installationId) {
     try {
+      const octokit = await this.getClient(installationId);
+      if (octokit) {
+        const response = await octokit.rest.pulls.get({
+          owner,
+          repo,
+          pull_number: prNumber,
+          mediaType: {
+            format: 'diff',
+          },
+        });
+        console.log(`[SUCCESS] [GitHub App] Fetched raw diff for ${owner}/${repo} #${prNumber} (${Buffer.byteLength(response.data)} bytes)`);
+        return response.data;
+      }
+
       const response = await this.client.get(`/repos/${owner}/${repo}/pulls/${prNumber}`, {
         headers: {
           'Accept': 'application/vnd.github.v3.diff',
@@ -81,10 +136,22 @@ class GithubService {
    * @param {string} owner - Repository owner/organization
    * @param {string} repo - Repository name
    * @param {number} prNumber - Pull request number
+   * @param {number} [installationId] - Optional GitHub App installation ID
    * @returns {Promise<Array>} List of changed files with patch content
    */
-  async getPullRequestFiles(owner, repo, prNumber) {
+  async getPullRequestFiles(owner, repo, prNumber, installationId) {
     try {
+      const octokit = await this.getClient(installationId);
+      if (octokit) {
+        const response = await octokit.rest.pulls.listFiles({
+          owner,
+          repo,
+          pull_number: prNumber,
+        });
+        console.log(`[SUCCESS] [GitHub App] Fetched changed files for ${owner}/${repo} #${prNumber} (${response.data.length} files)`);
+        return response.data;
+      }
+
       const response = await this.client.get(`/repos/${owner}/${repo}/pulls/${prNumber}/files`);
       console.log(`[SUCCESS] [GitHub API] Fetched changed files for ${owner}/${repo} #${prNumber} (${response.data.length} files)`);
       return response.data;
@@ -102,10 +169,34 @@ class GithubService {
    * @param {string} body - Review summary text
    * @param {'APPROVE'|'REQUEST_CHANGES'|'COMMENT'} [event='COMMENT'] - Action type
    * @param {Array<Object>} [comments=[]] - Optional inline review comments
+   * @param {number} [installationId] - Optional GitHub App installation ID
    * @returns {Promise<Object>} Response data
    */
-  async createPullRequestReview(owner, repo, prNumber, body, event = 'COMMENT', comments = []) {
+  async createPullRequestReview(owner, repo, prNumber, body, event = 'COMMENT', comments = [], installationId) {
     try {
+      const octokit = await this.getClient(installationId);
+      if (octokit) {
+        const payload = {
+          owner,
+          repo,
+          pull_number: prNumber,
+          body,
+          event,
+        };
+
+        if (Array.isArray(comments) && comments.length > 0) {
+          payload.comments = comments.map(c => ({
+            path: c.path,
+            line: c.line,
+            body: c.body
+          }));
+        }
+
+        const response = await octokit.rest.pulls.createReview(payload);
+        console.log(`[SUCCESS] [GitHub App] Created PR review (${event}) with ${comments.length} inline comments for ${owner}/${repo} #${prNumber}`);
+        return response.data;
+      }
+
       const payload = { body, event };
 
       if (Array.isArray(comments) && comments.length > 0) {
@@ -134,10 +225,27 @@ class GithubService {
    * @param {string} path - Relative file path
    * @param {number} line - Line number of the comment
    * @param {string} body - Comment body
+   * @param {number} [installationId] - Optional GitHub App installation ID
    * @returns {Promise<Object>} Response data
    */
-  async postReviewComment(owner, repo, prNumber, commitId, path, line, body) {
+  async postReviewComment(owner, repo, prNumber, commitId, path, line, body, installationId) {
     try {
+      const octokit = await this.getClient(installationId);
+      if (octokit) {
+        const response = await octokit.rest.pulls.createReviewComment({
+          owner,
+          repo,
+          pull_number: prNumber,
+          commit_id: commitId,
+          path,
+          line,
+          body,
+          side: 'RIGHT', // Comments on the modified side of the diff
+        });
+        console.log(`[SUCCESS] [GitHub App] Posted review comment to ${owner}/${repo} #${prNumber} on ${path}:${line}`);
+        return response.data;
+      }
+
       const response = await this.client.post(`/repos/${owner}/${repo}/pulls/${prNumber}/comments`, {
         body,
         commit_id: commitId,
@@ -165,7 +273,12 @@ class GithubService {
     let rateRemaining = null;
     let rateReset = null;
 
-    if (error.response) {
+    if (error.status) {
+      status = error.status;
+      if (error.response && error.response.data) {
+        githubMessage = error.response.data.message || JSON.stringify(error.response.data);
+      }
+    } else if (error.response) {
       status = error.response.status;
       rateRemaining = error.response.headers['x-ratelimit-remaining'];
       rateReset = error.response.headers['x-ratelimit-reset'];
@@ -181,7 +294,9 @@ class GithubService {
       } else if (error.response.data && error.response.data.message) {
         githubMessage = error.response.data.message;
       }
-      
+    }
+
+    if (status) {
       message = `HTTP ${status}${githubMessage ? `: ${githubMessage}` : ''}`;
     }
 

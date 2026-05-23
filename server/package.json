@@ -14,10 +14,12 @@
   "license": "ISC",
   "dependencies": {
     "@ngrok/ngrok": "^1.7.0",
+    "@octokit/auth-app": "^8.2.0",
     "axios": "^1.16.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "octokit": "^5.0.5",
     "openai": "^6.39.0"
   }
 }
