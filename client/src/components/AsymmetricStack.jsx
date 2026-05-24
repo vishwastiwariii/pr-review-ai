@@ -5,7 +5,7 @@ function AsymmetricStack({ simulationStep, isSimulating }) {
     <div className="md:col-span-6 relative min-h-[600px] mt-12 md:mt-0 flex items-center justify-center">
       
       {/* PR Comment Bot Card (Top Layer, Offset Right) */}
-      <div className="absolute right-0 top-12 z-30 bg-surface-container-lowest brutalist-border p-4 w-72 md:w-80 tech-shadow transform rotate-1 hover:rotate-0 transition-transform duration-300 cursor-pointer">
+      <div className="absolute right-2 md:right-6 top-4 z-30 bg-surface-container-lowest brutalist-border p-4 w-72 md:w-80 tech-shadow transform rotate-1 hover:rotate-0 transition-transform duration-300 cursor-pointer">
         <div className="flex items-center justify-between border-b border-[#0F172A]/10 pb-2 mb-2">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-emerald-100 brutalist-border flex items-center justify-center">
@@ -27,13 +27,13 @@ function AsymmetricStack({ simulationStep, isSimulating }) {
           <p className="text-[#ba1a1a] line-through">- query = f"SELECT * FROM users WHERE id = {`{user_id}`}"</p>
           <p className="text-[#294e3f] font-bold">+ query = "SELECT * FROM users WHERE id = %s"</p>
         </div>
-        <button className="mt-2 w-full bg-transparent border border-[#0F172A] text-on-surface font-label-caps py-1.5 hover:bg-[#D1FAE5] transition-colors flex items-center justify-center gap-1 cursor-pointer">
+        <div className="mt-2 w-full bg-transparent border border-[#0F172A] text-on-surface font-label-caps py-1.5 hover:bg-[#D1FAE5] transition-colors flex items-center justify-center gap-1 cursor-pointer">
           <span className="material-symbols-outlined text-sm">check</span> Commit Suggestion
-        </button>
+        </div>
       </div>
 
       {/* High Severity Security Badge (Middle Layer, Center Left) */}
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-error-container text-on-error-container brutalist-border p-2 flex items-center gap-4 tech-shadow transform -rotate-2 hover:rotate-0 transition-transform duration-300 cursor-pointer">
+      <div className="absolute left-2 md:left-6 top-[310px] z-20 bg-error-container text-on-error-container brutalist-border p-2 flex items-center gap-4 tech-shadow transform -rotate-2 hover:rotate-0 transition-transform duration-300 cursor-pointer">
         <span className="material-symbols-outlined text-[32px] animate-bounce">warning</span>
         <div>
           <p className="font-label-mono text-label-caps font-bold uppercase tracking-widest text-[#93000a]">High Severity</p>
@@ -45,7 +45,7 @@ function AsymmetricStack({ simulationStep, isSimulating }) {
       </div>
 
       {/* Code Context File diff card (Base Layer, Center Right) */}
-      <div className="absolute right-8 bottom-12 z-10 bg-surface-container-lowest brutalist-border w-80 tech-shadow opacity-90 hover:opacity-100 transform rotate-2 hover:rotate-0 transition-all duration-300">
+      <div className="absolute right-6 md:right-12 bottom-4 z-10 bg-surface-container-lowest brutalist-border w-72 md:w-80 tech-shadow opacity-90 hover:opacity-100 transform rotate-2 hover:rotate-0 transition-all duration-300">
         <div className="border-b border-[#0F172A] p-2 flex justify-between items-center bg-surface-container-low">
           <p className="font-label-caps text-label-caps flex items-center gap-1.5">
             <span className="material-symbols-outlined text-sm text-emerald-500">folder</span> src/auth/middleware.ts
@@ -58,8 +58,8 @@ function AsymmetricStack({ simulationStep, isSimulating }) {
           {/* Bug line */}
           <div className={`-mx-4 px-4 border-y transition-all duration-300 ${
             simulationStep === 2 
-              ? 'bg-error-container/30 border-[#ba1a1a]/30 text-[#ba1a1a] line-through opacity-80' 
-              : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+            ? 'bg-error-container/30 border-[#ba1a1a]/30 text-[#ba1a1a] line-through opacity-80' 
+            : 'bg-yellow-50 border-yellow-200 text-yellow-800'
           }`}>
             <p>14    if (token == null) return false;</p>
           </div>
@@ -78,9 +78,9 @@ function AsymmetricStack({ simulationStep, isSimulating }) {
 
       {/* Connecting lines SVG */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-20">
-        <path d="M 120 220 C 220 220, 180 420, 320 370" fill="transparent" stroke="#0F172A" strokeDasharray="4 4" strokeWidth="1"></path>
-        <circle cx="120" cy="220" fill="#0F172A" r="4"></circle>
-        <circle cx="320" cy="370" fill="#0F172A" r="4"></circle>
+        <path d="M 140 335 C 240 335, 180 440, 260 440" fill="transparent" stroke="#0F172A" strokeDasharray="4 4" strokeWidth="1"></path>
+        <circle cx="140" cy="335" fill="#0F172A" r="4"></circle>
+        <circle cx="260" cy="440" fill="#0F172A" r="4"></circle>
       </svg>
 
       {/* Loading/Analysing Overlay */}
