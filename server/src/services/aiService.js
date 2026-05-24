@@ -66,6 +66,7 @@ class AiService {
     const maxAttempts = 3;
     let lastError = null;
     let lastRawResponseText = '';
+    let currentMaxTokens = 2000; // Balanced, ample token space for thorough reviews
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -76,18 +77,25 @@ class AiService {
           await sleep(backoffDelay);
         }
 
-        console.log(`[INFO] [AI Service] Executing OpenRouter completion request (Attempt ${attempt}/${maxAttempts})...`);
+        console.log(`[INFO] [AI Service] Executing OpenRouter completion request (Attempt ${attempt}/${maxAttempts} with max_tokens: ${currentMaxTokens})...`);
         
-        const response = await this.client.chat.completions.create({
+        const requestOptions = {
           model: this.model,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          response_format: { type: 'json_object' },
           temperature: 0.2, // Low temperature for high deterministic accuracy
-          max_tokens: 1500,  // Limit completion tokens to fit within credit boundaries
-        });
+          max_tokens: currentMaxTokens,
+        };
+
+        // Only use response_format for models that support it (exclude minimax and free models by default)
+        const supportsJsonMode = !this.model.includes('free') && !this.model.includes('minimax');
+        if (supportsJsonMode) {
+          requestOptions.response_format = { type: 'json_object' };
+        }
+
+        const response = await this.client.chat.completions.create(requestOptions);
 
         lastRawResponseText = response.choices[0].message.content || '';
         
@@ -110,10 +118,21 @@ class AiService {
 
       } catch (err) {
         lastError = err;
+        const status = err.status || '';
+
+        // Dynamically recover from 402 credit/token limit errors by scaling down token request
+        if (status === 402 || err.message.includes('credits') || err.message.includes('max_tokens')) {
+          const affordMatch = err.message.match(/can only afford (\d+)/i);
+          if (affordMatch) {
+            const affordableTokens = parseInt(affordMatch[1], 10);
+            const newMaxTokens = Math.max(affordableTokens - 50, 200); // Safe margin, min 200
+            console.warn(`[WARN] [AI Service] 402 Credit limit caught. Dynamically scaling max_tokens down from ${currentMaxTokens} to ${newMaxTokens} based on account balance.`);
+            currentMaxTokens = newMaxTokens;
+          }
+        }
         
         // Inspect transient status categories
-        const status = err.status || '';
-        const isTransient = status === 429 || (status >= 500 && status <= 504) || err.message.includes('timeout') || err.message.includes('parsing');
+        const isTransient = status === 402 || status === 429 || (status >= 500 && status <= 504) || err.message.includes('timeout') || err.message.includes('parsing');
         
         console.error(
           `[ERROR] [AI Service] Attempt ${attempt}/${maxAttempts} failed. ` +

@@ -16,13 +16,13 @@ function stripMarkdownTicks(rawString) {
   
   let cleaned = rawString.trim();
 
-  // Strip ```json ... ``` or ``` ... ```
-  const markdownMatch = cleaned.match(/```json\s*([\s\S]*?)\s*```/) || cleaned.match(/```\s*([\s\S]*?)\s*```/);
-  if (markdownMatch) {
-    cleaned = markdownMatch[1].trim();
-  }
+  // Strip leading ```json or ```
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, '');
 
-  return cleaned;
+  // Strip trailing ```
+  cleaned = cleaned.replace(/\s*```$/, '');
+
+  return cleaned.trim();
 }
 
 /**
