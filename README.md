@@ -19,7 +19,7 @@
   * 🔵 **Style & Readability**: Checks naming clarity, file organization, and clean architecture standards.
 * **Resilient Self-Healing AI Pipeline**: Engineered with state-of-the-art token truncation scanners, stack-based JSON repair algorithms, and automatic fallback routers to handle malformed LLM outputs and connection timeouts gracefully.
 * **Intelligent Line-Mapping Recovery**: Automatically handles API conflicts (such as GitHub HTTP `422` error codes caused by hallucinated code diff lines) by falling back to separate summary postings and line-by-line comment mapping.
-* **Developer Sandbox Dashboard**: A beautiful, responsive brutalist-style visual console built with React, Vite, and Tailwind CSS to check system health, inspect backend diagnostics, and simulate manual reviews locally.
+* **Developer Simulation Landing Page**: A beautiful, responsive brutalist-style visual landing page built with React, Vite, and Tailwind CSS to introduce the product and visualize pull request review executions.
 * **Cryptographic Webhook Security**: Secure HMAC-SHA256 signature verification matching GitHub's webhooks.
 
 ---
@@ -56,17 +56,16 @@ Here is the exact folder structure of the repository, reflecting the actual code
 │   ├── .env.example              # Server environment variable template
 │   └── package.json              # Backend package list
 │
-├── client/                       # Interactive Frontend Sandbox Dashboard
+├── client/                       # Interactive Frontend Simulation Landing Page
 │   ├── src/
 │   │   ├── assets/               # Branding images and stylesheet loaders
-│   │   ├── components/           # UI elements (Navbar, Form, Showcase, Hero)
+│   │   ├── components/           # UI elements (Navbar, Showcase, Hero)
 │   │   │   ├── AsymmetricStack.jsx
 │   │   │   ├── Footer.jsx
 │   │   │   ├── Hero.jsx
 │   │   │   ├── Navbar.jsx
-│   │   │   ├── SandboxForm.jsx
 │   │   │   └── Showcase.jsx      # Feature layout (custom GitHub App section)
-│   │   ├── App.jsx               # App container & health diagnostic runner
+│   │   ├── App.jsx               # UI Core
 │   │   ├── index.css             # TailwindCSS & custom brutalist classes
 │   │   └── main.jsx              # React entry script
 │   ├── package.json              # Client package list
@@ -135,7 +134,7 @@ Follow these steps to configure and run the backend web server and frontend deve
 
 ---
 
-### 2. Frontend Sandbox Dashboard Setup
+### 2. Frontend Landing Page Setup
 
 1. Open a new terminal window and navigate to the client folder:
    ```bash
@@ -149,22 +148,18 @@ Follow these steps to configure and run the backend web server and frontend deve
    ```bash
    npm run dev
    ```
-4. Access the fully responsive visual console in your browser at:
+4. Access the responsive visual landing page in your browser at:
    👉 **`http://localhost:5173`**
 
 ---
 
-## 🏃 Local Manual Simulation Guide
+## 🏃 Triggering Reviews via GitHub Webhooks
 
-Once both the client and server are running, you can test the entire AI review execution loop inside the browser:
-1. Open the Developer Console at **`http://localhost:5173`**.
-2. Look at the top right connection status — it should display a **Green "Checking / Online"** diagnostic badge.
-3. In the manual trigger sandbox form, input repository details:
-   - **GitHub Owner / Org Name**: (e.g. `vishwastiwariii`)
-   - **Repository Name**: (e.g. `multivendor-marketplace-backend`)
-   - **PR Number**: (e.g. `2`)
-4. Click **Trigger Review**. The dashboard will fire an API call, and your terminal will print the pipeline progression (Step 1: fetching files, Step 2: filtering, Step 3: formatting, Step 4: generating AI review, Step 5: mapping line-by-line comments).
-5. Open the target pull request on GitHub to view your automated review comments mapped directly to the code!
+Once both the client and server are running, you can verify your active setup by triggering reviews on code changes:
+1. Ensure your local backend is tunneling through Ngrok (if configured) or deployed externally.
+2. In your GitHub App configuration (or repository settings), configure a webhook pointing to your active tunnel address (e.g. `https://<your-ngrok-subdomain>.ngrok-free.app/webhooks/github`).
+3. Open a Pull Request or push a new commit to a Pull Request in a monitored repository.
+4. The GitHub Webhook will trigger a background transaction, prompting the review orchestrator to run deep multi-stage audits and write inline reviews directly back to GitHub!
 
 ---
 
@@ -174,7 +169,7 @@ Once both the client and server are running, you can test the entire AI review e
 | :--- | :--- | :--- |
 | `/server` | `npm run dev` | Starts backend development server with auto hot-reload |
 | `/server` | `npm start` | Starts production listener |
-| `/client` | `npm run dev` | Runs the interactive developer sandbox console |
+| `/client` | `npm run dev` | Runs the interactive developer landing page |
 | `/client` | `npm run build` | Builds frontend assets for production distribution |
 
 ---
